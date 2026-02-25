@@ -1,19 +1,15 @@
 import json
 import os
 from fastapi import APIRouter, Depends, HTTPException
-from groq import APITimeoutError, RateLimitError
 from pydantic import BaseModel
-from app.services.prompts import task_description_system_prompt
 from app.auth.jwt_handler import hash_password, verify_password, create_access_token
 from app.auth.dependencies import get_current_user
 from langchain.agents import create_agent
-from langchain.agents.middleware import ModelCallLimitMiddleware, ModelRetryMiddleware, ModelFallbackMiddleware, ToolCallLimitMiddleware, ToolRetryMiddleware
 from langchain_core.messages import HumanMessage
-from langchain.agents.structured_output import ToolStrategy, ProviderStrategy
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from app.services.ai_services import default_model, fallback_model, tavily_search
+from app.services.ai_services import  description_generator_agent
 
 rate_limiter = InMemoryRateLimiter(
     requests_per_second=0.5,
@@ -44,20 +40,7 @@ async def suggest_description(task: SuggestRequest, current_user: dict = Depends
         if not current_user["is_admin"]:
             raise HTTPException(status_code=403, detail="Admin privileges required to generate task description")
         
-        description_generator_agent = create_agent(
-            model=default_model,
-            tools=[tavily_search],
-            system_prompt=task_description_system_prompt,
-            middleware=[
-                ToolCallLimitMiddleware(tool_name="tavily_search", thread_limit=3, run_limit=3),
-                ModelFallbackMiddleware(first_model=fallback_model),
-                ModelCallLimitMiddleware(thread_limit=3, run_limit=3),
-                ModelRetryMiddleware(max_retries=3, 
-                                     retry_on=(APITimeoutError, RateLimitError), 
-                                     backoff_factor=1.5, 
-                                     initial_delay=2.0)
-            ]
-        )
+        
 
         message = HumanMessage(content=f"Task title: {task.title}")
         response = await description_generator_agent.ainvoke({"messages": message})
