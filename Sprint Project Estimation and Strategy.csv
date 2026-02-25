@@ -2,7 +2,7 @@
 Project Setup,"Env Setup, Project boilerplate and initial estimates.csv commit.",2,3,3,
 Database Design,"Schema design (User,Task, Resume Tables) and Supabase migration",2,4,3.5,
 Auth,JWT-based Authentication,1.5,2.5,1.5,
-Core API,Task & User CRUD endpoints,3,4,,
+Core API,Task & User CRUD endpoints,3,4,4,
 AI Assist ,/ai/suggest Generate task description,2,4,,
 Resume CRUD,Resume CRUD endpoints,2,4,,
 RAG,"/ai/suggest Implement ""Best-Fit"" user search",2.5,5,,
