@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import users, tasks, suggest
+from app.routes import users, tasks, suggest, resumes
 
 
 # Create FastAPI app
@@ -23,3 +23,4 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(tasks.router)
 app.include_router(suggest.router)
+app.include_router(resumes.router)
