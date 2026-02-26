@@ -95,8 +95,8 @@ class QueryVariations(BaseModel):
             "1-4 words maximum. No verbs. No sentences. "
             "Only tools, frameworks, technologies, or domain concepts."
         ),
-        min_items=1,
-        max_items=2
+        min_length=1,
+        max_length=2
     )
 
     task_search_queries: List[str] = Field(
@@ -104,8 +104,8 @@ class QueryVariations(BaseModel):
             "Action-oriented professional task descriptions. "
             "Full sentence describing a real responsibility."
         ),
-        min_items=1,
-        max_items=3
+        min_length=1,
+        max_length=3
     )
 
 query_generator_agent = create_agent(

@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
-from app.services.ai_services import  description_generator_agent, query_generator_agent
+from app.services.ai_services import description_generator_agent, query_generator_agent
 from app.services.retrieval import multi_query_hybrid_search
 from app.logging_config import get_logger
 
@@ -20,8 +20,6 @@ rate_limiter = InMemoryRateLimiter(
 )
 
 load_dotenv()
-
-USE_LLM_STUB = json.loads(os.getenv("USE_LLM_STUB", "false").lower())
 
 router = APIRouter(prefix="/ai", tags=["suggest"])
 
@@ -36,7 +34,7 @@ class SuggestProfileRequest(BaseModel):
 @router.post("/suggest")
 async def suggest_description(task: SuggestRequest, current_user: dict = Depends(get_current_user)):
     try:
-        if USE_LLM_STUB:
+        if json.loads(os.getenv("USE_LLM_STUB", "false").lower()):
             logger.info("Using LLM stub for suggest_description")
             return ["This is a stubbed task description one for testing purposes.", 
                                          "This is a stubbed task description two for testing purposes.", 
@@ -63,7 +61,7 @@ async def suggest_profile(task: SuggestProfileRequest, current_user: dict = Depe
     # Fetch user's resume snippets from Supabase
     
     try:
-        if USE_LLM_STUB:
+        if json.loads(os.getenv("USE_LLM_STUB", "false").lower()):
             logger.info("Using LLM stub for suggest_profile")
             return [
                 {"id": "18bfb1c2-5c9a-328a-9b3a-8f1e769df1e6",
