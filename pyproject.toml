@@ -24,7 +24,10 @@ dependencies = [
     "tavily-python (>=0.7.21,<0.8.0)",
     "langsmith (>=0.7.6,<0.8.0)",
     "boto3 (>=1.42.56,<2.0.0)",
-    "pypdf (>=6.7.3,<7.0.0)"
+    "pypdf (>=6.7.3,<7.0.0)",
+    "structlog (>=25.5.0,<26.0.0)",
+    "prometheus-client (>=0.24.1,<0.25.0)",
+    "prometheus-fastapi-instrumentator (>=7.1.0,<8.0.0)"
 ]
 
 

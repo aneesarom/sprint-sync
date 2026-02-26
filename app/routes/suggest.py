@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from app.services.ai_services import  description_generator_agent, query_generator_agent
 from app.services.retrieval import multi_query_hybrid_search
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 rate_limiter = InMemoryRateLimiter(
     requests_per_second=0.5,
@@ -34,21 +37,24 @@ class SuggestProfileRequest(BaseModel):
 async def suggest_description(task: SuggestRequest, current_user: dict = Depends(get_current_user)):
     try:
         if USE_LLM_STUB:
-            return {"task_description": ["This is a stubbed task description one for testing purposes.", 
+            logger.info("Using LLM stub for suggest_description")
+            return ["This is a stubbed task description one for testing purposes.", 
                                          "This is a stubbed task description two for testing purposes.", 
-                                         "This is a stubbed task description three for testing purposes."]}
+                                         "This is a stubbed task description three for testing purposes."]
         
         if not current_user["is_admin"]:
+            logger.error(reason="User doesn't have Admin privilege")
             raise HTTPException(status_code=403, detail="Admin privileges required to generate task description")
         
         
 
         message = HumanMessage(content=f"Task title: {task.title}")
         response = await description_generator_agent.ainvoke({"messages": message})
-        return {"task_description": json.loads(response["messages"][-1].content)["description"]}
+        return json.loads(response["messages"][-1].content)["description"]
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
 
@@ -57,7 +63,16 @@ async def suggest_profile(task: SuggestProfileRequest, current_user: dict = Depe
     # Fetch user's resume snippets from Supabase
     
     try:
+        if USE_LLM_STUB:
+            logger.info("Using LLM stub for suggest_profile")
+            return [
+                {"id": "18bfb1c2-5c9a-328a-9b3a-8f1e769df1e6",
+                "username": "user1"},
+                {"id": "434356d4-9c3a-4c8e-9b3a-8f1e769df1e6",
+                "username": "user2"}
+                ]
         if not current_user["is_admin"]:
+            logger.error(reason="User doesn't have Admin privilege")
             raise HTTPException(status_code=403, detail="Admin privileges required to generate task description")
         
         messages = [
@@ -77,8 +92,12 @@ async def suggest_profile(task: SuggestProfileRequest, current_user: dict = Depe
             {"input_ids": finalized_user_ids}
         ).execute()
 
-        return {"top_profiles": supabase_response.data or []}
+        if not supabase_response.data:
+            logger.warning(reason="No profile matches found")
+
+        return supabase_response.data or []
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

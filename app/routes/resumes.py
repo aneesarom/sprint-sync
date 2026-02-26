@@ -7,6 +7,9 @@ from app.services.s3_bucket import s3_client, BUCKET_NAME
 from app.services.ai_services import profile_task_generator_agent, profile_skills_generator_agent, embeddings_model
 from pypdf import PdfReader
 from io import BytesIO
+from app.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
@@ -24,6 +27,7 @@ async def create_resume(file: UploadFile = File(...), current_user: dict = Depen
     s3_key = None
     try:
         if file.content_type != "application/pdf":
+            logger.error(reason="Invalid file type. Only PDF files are allowed.")
             raise HTTPException(status_code=400, detail="Invalid file type. Only PDF files are allowed.")
               
         file_bytes = await file.read()
@@ -63,12 +67,14 @@ async def create_resume(file: UploadFile = File(...), current_user: dict = Depen
             ).execute()
         
         if not create_response.data:
+            logger.error(reason="Failed to save resume snippet in database")
             raise Exception("Failed to save resume snippet")
 
         return {"message": "Resume snippet uploaded successfully", "s3_key": s3_key}
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
 
@@ -78,12 +84,14 @@ async def get_resume(current_user: dict = Depends(get_current_user)):
         response = supabase.table("resumes").select("*").eq("user_id", current_user["id"]).execute()
 
         if not response.data:
+            logger.error(reason="Resume not found for user")
             raise HTTPException(status_code=404, detail="Resume not found")
 
         return response.data[0]
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     
 
@@ -93,6 +101,7 @@ async def delete_resume(current_user: dict = Depends(get_current_user)):
         existing = supabase.table("resumes").select("*").eq("user_id", current_user["id"]).execute()
 
         if not existing.data:
+            logger.error(reason="Resume not found for user")
             raise HTTPException(status_code=404, detail="Resume not found")
 
         s3_key = existing.data[0]["s3_key"]
@@ -103,10 +112,12 @@ async def delete_resume(current_user: dict = Depends(get_current_user)):
         delete_response = supabase.table("resumes").delete().eq("user_id", current_user["id"]).execute()
 
         if not delete_response.data:
+            logger.error(reason="Failed to delete resume record")
             raise Exception("Failed to delete resume record")
 
         return {"message": "Resume deleted successfully"}
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
