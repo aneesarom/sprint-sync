@@ -3,13 +3,15 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from dotenv import load_dotenv
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_groq import ChatGroq
-from app.services.prompts import task_description_system_prompt, resume_sparse_prompt, resume_semantic_prompt
+from app.services.prompts import task_description_system_prompt, resume_sparse_prompt, resume_semantic_prompt, query_generator_system_prompt
 from langchain.agents import create_agent
 from langchain.agents.middleware import ModelCallLimitMiddleware, ModelRetryMiddleware, ModelFallbackMiddleware, ToolCallLimitMiddleware
 from langchain.agents.structured_output import ToolStrategy, ProviderStrategy
 from tavily import TavilyClient
 from dotenv import load_dotenv
 from langchain_core.tools import tool
+from pydantic import BaseModel, Field
+from typing import List
 import os
 
 load_dotenv()
@@ -83,6 +85,42 @@ profile_task_generator_agent = create_agent(
                                      initial_delay=2.0)
             ]
     )
+
+
+class QueryVariations(BaseModel):
+
+    keyword_search_queries: List[str] = Field(
+        description=(
+            "Technical noun phrases for sparse search. "
+            "1-4 words maximum. No verbs. No sentences. "
+            "Only tools, frameworks, technologies, or domain concepts."
+        ),
+        min_items=1,
+        max_items=2
+    )
+
+    task_search_queries: List[str] = Field(
+        description=(
+            "Action-oriented professional task descriptions. "
+            "Full sentence describing a real responsibility."
+        ),
+        min_items=1,
+        max_items=3
+    )
+
+query_generator_agent = create_agent(
+    model=default_model,
+    system_prompt=query_generator_system_prompt,
+    middleware=[
+                ModelFallbackMiddleware(first_model=fallback_model),
+                ModelCallLimitMiddleware(thread_limit=3, run_limit=3),
+                ModelRetryMiddleware(max_retries=3, 
+                                     retry_on=(APITimeoutError, RateLimitError), 
+                                     backoff_factor=1.5, 
+                                     initial_delay=2.0)
+            ]
+    )
+
 
 
 
