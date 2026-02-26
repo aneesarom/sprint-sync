@@ -51,7 +51,7 @@ def create_user(data: SignUpRequest):
             "email": data.email,
             "username": data.username,
             "password": hashed_password,
-            "is_admin": data.is_admin
+            "is_admin": False
         }).execute()
 
         if not res.data:
