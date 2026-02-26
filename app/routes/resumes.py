@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, File, HTTPException, status
 from pydantic import BaseModel, EmailStr
 from app.services.supabase_client import supabase
@@ -19,8 +21,7 @@ class ResumeResponse(BaseModel):
     user_id: str
     s3_key: str
     profile_skills: str
-    profile_tasks: str  
-
+    profile_tasks: str
 
 @router.post("/create")
 async def create_resume(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
@@ -70,7 +71,11 @@ async def create_resume(file: UploadFile = File(...), current_user: dict = Depen
             logger.error(reason="Failed to save resume snippet in database")
             raise Exception("Failed to save resume snippet")
 
-        return {"message": "Resume snippet uploaded successfully", "s3_key": s3_key}
+        return {"message": "Resume snippet uploaded successfully", 
+                "uploaded_data": {
+                    "s3_key": s3_key,
+                    "profile_skills": sparse_response,
+                    "profile_tasks": semantic_response}}
     except HTTPException:
         raise
     except Exception as e:
@@ -116,6 +121,20 @@ async def delete_resume(current_user: dict = Depends(get_current_user)):
             raise Exception("Failed to delete resume record")
 
         return {"message": "Resume deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/list")
+def list_resumes(current_user: dict = Depends(get_current_user)):
+    try:
+        if not current_user["is_admin"]:
+            logger.error(reason="User doesn't have Admin privilege")
+            raise HTTPException(status_code=403, detail="Not authorized. Only admins can view all resumes.")
+        res = supabase.table("resumes").select("id, user_id, s3_key, profile_skills, profile_tasks, users(username)").execute()
+        return res.data
     except HTTPException:
         raise
     except Exception as e:
