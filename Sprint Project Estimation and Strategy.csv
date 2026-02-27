@@ -10,5 +10,5 @@ Ops & Obs,"Structured logging, Prometheus metrics, and error handling. ",1.5,3,3
 Testing,Unit tests for logic + integration test for AI stub.,1,2,1.5,
 Containerization,Dockerfile and docker-compose setup,1.5,3,1.5,
 Deployment,Cloud deployment (Render),2,4,1,
-Project Walkthrough,README documentation and Loom demo recording.,3,6,,
-Total,,22.5,41.5,,
+Project Walkthrough,README documentation and Loom demo recording.,3,6,4,
+Total,,22.5,41.5,35.5,
