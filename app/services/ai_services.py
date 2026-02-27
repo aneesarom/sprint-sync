@@ -95,8 +95,7 @@ class QueryVariations(BaseModel):
             "1-4 words maximum. No verbs. No sentences. "
             "Only tools, frameworks, technologies, or domain concepts."
         ),
-        min_length=1,
-        max_length=2
+        max_length=3
     )
 
     task_search_queries: List[str] = Field(
@@ -104,7 +103,6 @@ class QueryVariations(BaseModel):
             "Action-oriented professional task descriptions. "
             "Full sentence describing a real responsibility."
         ),
-        min_length=1,
         max_length=3
     )
 
